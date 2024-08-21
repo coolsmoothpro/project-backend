@@ -1,0 +1,31 @@
+.main-grid {
+    display: flex;
+    align-items: start;
+}
+
+.navbar-verticle-height16 {
+    width: 16.25rem;
+}
+
+.main {
+    padding-top: 3.875rem;
+}
+
+.footer {
+    padding-top: 1rem;
+}
+
+.navbar-aside-toggler {
+    opacity: 1;
+}
+
+.navbar.navbar-container .navbar-nav-wrap-content-start {
+    padding-left: 10%;
+}
+
+@media (max-width:1200px) {
+    .navbar-verticle-height16 {
+        position: fixed;
+        margin-left: -18rem;
+    }
+}
