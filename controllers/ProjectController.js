@@ -1,6 +1,9 @@
 const db = require("../models");
 const Project = db.project;
 const { createTransport } = require('nodemailer');
+const sendGridMail = require("@sendgrid/mail");
+
+sendGridMail.setApiKey(process.env.EMAIL_SEND_API_KEY);
 
 const transporter = createTransport({
     host: "smtp.gmail.com",
@@ -138,11 +141,11 @@ exports.sendInvite = async (req, res) => {
 
         const base64EncodedStr = btoa(encode);
 
-        const mailOptions = {
-            from: process.env.SMTP_EMAIL,
+        await sendGridMail.send({
+            from: process.env.EMAIL_SENDER,
             to: req.body.email,
-            subject: `You have received the invitation.`,
-            text: `Accept`,
+            subject: 'You have received the invitation.',
+            text: 'Accept',
             html: `
                 <p>
                     Kindly click the button below to accept the invitation.
@@ -162,21 +165,53 @@ exports.sendInvite = async (req, res) => {
                     Accept
                 </a>
             `
-        };
+        });
+
+        return res.status(200).json({
+            success: true,
+        });
+
+
+        // const mailOptions = {
+        //     from: process.env.SMTP_EMAIL,
+        //     to: req.body.email,
+        //     subject: `You have received the invitation.`,
+        //     text: `Accept`,
+        //     html: `
+        //         <p>
+        //             Kindly click the button below to accept the invitation.
+        //         </p>
+        //         <a href="${process.env.CLIENT_URL}/welcome?token=${base64EncodedStr}" 
+        //             style="
+        //                 text-decoration: none;
+        //                 color: #fff;
+        //                 background-color: #14A800;
+        //                 border-color: #14A800;
+        //                 min-width: 100px;
+        //                 border-radius: 3px;
+        //                 padding: 0.375rem 0.5rem;
+        //                 display: inline-block;
+        //                 text-align: center;
+        //             ">
+        //             Accept
+        //         </a>
+        //     `
+        // };
         
-        transporter.sendMail(mailOptions, function(error, info){
-            if (error) {
-                console.log(error);
+        // transporter.sendMail(mailOptions, function(error, info){
+        //     if (error) {
+        //         console.log(error);
                 
-                return res.status(200).json({
-                    success: false,
-                });
-            } else {
-                return res.status(200).json({
-                    success: true,
-                });
-            }
-        });      
+        //         return res.status(200).json({
+        //             success: false,
+        //         });
+        //     } else {
+        //         return res.status(200).json({
+        //             success: true,
+        //         });
+        //     }
+        // });
+       
         
 
     } catch (err) {

@@ -4,6 +4,9 @@ const Role = db.role;
 
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const sendGridMail = require("@sendgrid/mail");
+
+sendGridMail.setApiKey(process.env.EMAIL_SEND_API_KEY);
 
 
 exports.signup = async (req, res) => {
@@ -163,11 +166,51 @@ exports.forgetPassword = async (req, res) => {
 
         if (user) {
 
-            const mailOptions = {
-                from: process.env.SMTP_EMAIL,
-                to: req.body.email,
-                subject: `Reset Password.`,
-                text: `Reset Password`,
+            // const mailOptions = {
+            //     from: process.env.SMTP_EMAIL,
+            //     to: req.body.email,
+            //     subject: `Reset Password.`,
+            //     text: `Reset Password`,
+            //     html: `
+            //         <p>
+            //             Kindly click the button below to reset the password.
+            //         </p>
+            //         <a href="${process.env.CLIENT_URL}/reset-password-form?token=${base64EncodedStr}"
+            //             style="
+            //                 text-decoration: none;
+            //                 color: #fff;
+            //                 background-color: #14A800;
+            //                 border-color: #14A800;
+            //                 min-width: 100px;
+            //                 border-radius: 3px;
+            //                 padding: 0.375rem 0.5rem;
+            //                 display: inline-block;
+            //                 text-align: center;
+            //             ">
+            //             Reset
+            //         </a>
+            //     `
+            // };
+            
+            // transporter.sendMail(mailOptions, function(error, info){
+            //     if (error) {
+            //         console.log(error);
+                    
+            //         return res.status(200).json({
+            //             success: false,
+            //         });
+            //     } else {
+            //         return res.status(200).json({
+            //             success: true,
+            //         });
+            //     }
+            // });      
+
+            await sendGridMail.send({
+                from: process.env.EMAIL_SENDER,
+                to: email,
+                subject: 'Reset Password.',
+                text: 'Reset Password',
                 html: `
                     <p>
                         Kindly click the button below to reset the password.
@@ -187,20 +230,6 @@ exports.forgetPassword = async (req, res) => {
                         Reset
                     </a>
                 `
-            };
-            
-            transporter.sendMail(mailOptions, function(error, info){
-                if (error) {
-                    console.log(error);
-                    
-                    return res.status(200).json({
-                        success: false,
-                    });
-                } else {
-                    return res.status(200).json({
-                        success: true,
-                    });
-                }
             });
 
             return res.status(200).json({
