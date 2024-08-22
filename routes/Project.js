@@ -29,5 +29,6 @@ router.post("/accept-invite", ProjectController.acceptInvite);
 router.post("/task-create", ProjectController.createTask);
 router.post("/task-list", ProjectController.taskList);
 router.post("/task-update", ProjectController.updateTaskStatus);
+router.post("/delete-project", ProjectController.deleteProject);
 
 module.exports = router;

@@ -362,3 +362,29 @@ exports.updateTaskStatus = async (req, res) => {
         return res.status(500).json({ message: "Internal server error" });
     }
 } 
+
+exports.deleteProject = async (req, res) => {
+    try {
+        const { projectId } = req.body;
+
+        const project = await Project.findById(projectId);
+
+        if (project) {
+            await Project.findByIdAndDelete(projectId);
+
+            return res.status(200).json({
+                success: true,
+                message: "Project has been deleted!"
+            });
+        } else {
+            return res.status(200).json({
+                success: false,
+                message: "Project not found!"
+            });
+        }        
+
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}

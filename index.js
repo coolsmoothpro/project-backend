@@ -10,7 +10,7 @@ const UserRoute = require("./routes/User");
 const ProjectRoute = require("./routes/Project");
 const TeamRoute = require("./routes/Team");
 
-const PORT=process.env.PORT || 8475;
+const PORT=process.env.PORT || 8000;
 
 Connection();
 
