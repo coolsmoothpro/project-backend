@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 const Project = mongoose.model(
     "Project",
     new mongoose.Schema({
+        projectLogo: String,
         projectName: String,
         projectDescription: String,
         client: String,

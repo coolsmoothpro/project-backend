@@ -30,5 +30,6 @@ router.post("/task-create", ProjectController.createTask);
 router.post("/task-list", ProjectController.taskList);
 router.post("/task-update", ProjectController.updateTaskStatus);
 router.post("/delete-project", ProjectController.deleteProject);
+router.post("/upload-project-file", upload.array('files', 10), ProjectController.uploadProjectFile);
 
 module.exports = router;

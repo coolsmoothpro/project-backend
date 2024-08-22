@@ -2,6 +2,7 @@ const db = require("../models");
 const Project = db.project;
 const { createTransport } = require('nodemailer');
 const sendGridMail = require("@sendgrid/mail");
+const User = require("../models/User");
 
 sendGridMail.setApiKey(process.env.EMAIL_SEND_API_KEY);
 
@@ -17,11 +18,12 @@ const transporter = createTransport({
 
 exports.createProject = async (req, res) => {
     try {
-        const { client, projectName, projectDescription, dueDate, terms, expectedValue, milestone, members, status, tasks } = req.body;
+        const { client, projectLogo, projectName, projectDescription, dueDate, terms, expectedValue, milestone, members, status, tasks } = req.body;
         
 
         const newProject = new Project({
             client: client,
+            projectLogo: projectLogo,
             projectName: projectName,
             projectDescription: projectDescription,
             dueDate: dueDate,
@@ -109,11 +111,12 @@ exports.updateProjectStatus = async (req, res) => {
 
 exports.updateProject = async (req, res) => {
     try {
-        const { id, projectName, projectDescription, terms, expectedValue, milestone } = req.body;
+        const { id, projectLogo, projectName, projectDescription, terms, expectedValue, milestone } = req.body;
 
         const updatedProject = await Project.findByIdAndUpdate(
                 id,
                 {
+                    projectLogo: projectLogo,
                     projectName: projectName,
                     projectDescription: projectDescription,
                     terms: terms,
@@ -226,9 +229,10 @@ exports.acceptInvite = async (req, res) => {
         const decoded = JSON.parse(atob(token));
         const projectName = decoded?.projectName;
         const email = decoded?.email;
-        const firstname = decoded?.firstname;
-        const lastname = decoded?.lastname;
-        const avatar = decoded?.avatar;
+        const user = await User.findOne({email: email});
+        const firstname = user?.firstname;
+        const lastname = user?.lastname;
+        const avatar = user?.avatar;
 
         const project = await Project.findOne({ projectName: projectName });
 
@@ -383,6 +387,27 @@ exports.deleteProject = async (req, res) => {
             });
         }        
 
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+exports.uploadProjectFile = async (req, res) => {
+    try {
+        const { projectId } = req.body;
+
+        const project = await Project.findById(projectId);
+
+        req.files?.forEach((file) => {
+            project.attachedFiles.push(file);
+        });
+        
+        await project.save();
+
+        return res.status(200).json({
+            success: true,
+        });
     } catch (err) {
         console.log(err);
         return res.status(500).json({ message: "Internal server error" });
