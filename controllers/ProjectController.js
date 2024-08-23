@@ -140,6 +140,21 @@ exports.updateProject = async (req, res) => {
 
 exports.sendInvite = async (req, res) => {
     try {
+        const { email, projectName } = req.body;
+        const project = await Project.findOne({ projectName: projectName });
+
+        if(project) {
+
+            const existingMember = project.members.find(member => member.email === email);
+
+            if (existingMember) {
+                return res.status(200).json({
+                    success: false,
+                    message: "Member with this email already exists in the project.",
+                });
+            }
+        }
+
         const encode = JSON.stringify(req.body);
 
         const base64EncodedStr = btoa(encode);
@@ -172,6 +187,7 @@ exports.sendInvite = async (req, res) => {
 
         return res.status(200).json({
             success: true,
+            message: "Invitation has been sent!"
         });
 
 
@@ -233,6 +249,8 @@ exports.acceptInvite = async (req, res) => {
         const firstname = user?.firstname;
         const lastname = user?.lastname;
         const avatar = user?.avatar;
+        const role = user?.role;
+        const phone = user?.phone;
 
         const project = await Project.findOne({ projectName: projectName });
 
@@ -251,7 +269,9 @@ exports.acceptInvite = async (req, res) => {
                 email: email,
                 firstname: firstname,
                 lastname: lastname,
-                avatar: avatar
+                avatar: avatar,
+                role: role,
+                phone: phone
             });
 
             await project.save();
@@ -407,6 +427,45 @@ exports.uploadProjectFile = async (req, res) => {
 
         return res.status(200).json({
             success: true,
+        });
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+exports.deleteFile = async (req, res) => {
+    try {
+        const { projectId, filename } = req.body;
+
+        const project = await Project.findById(projectId);
+
+        project.attachedFiles = project.attachedFiles?.filter(file => file.filename !== filename);
+        
+        await project.save();
+
+        return res.status(200).json({
+            success: true,
+        });
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+exports.deleteMember = async (req, res) => {
+    try {
+        const { projectId, email } = req.body;
+
+        const project = await Project.findById(projectId);
+
+        project.members = project.members?.filter(member => member.email !== email);
+        
+        await project.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Member has been deleted!"
         });
     } catch (err) {
         console.log(err);

@@ -10,7 +10,7 @@ const UserRoute = require("./routes/User");
 const ProjectRoute = require("./routes/Project");
 const TeamRoute = require("./routes/Team");
 
-const PORT=process.env.PORT || 8000;
+const PORT=process.env.PORT || 8475;
 
 Connection();
 
@@ -39,6 +39,7 @@ app.use("/api/v1/team", TeamRoute);
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'build')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Handle all other routes and return the React app
 app.get('*', (req, res) => {
