@@ -12,6 +12,7 @@ const User = mongoose.model(
         organization: String,
         department: String,
         accountType: String,
+        status: String,
         location: {
             country: String,
             city: String,

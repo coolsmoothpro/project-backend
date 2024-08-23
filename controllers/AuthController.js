@@ -29,7 +29,8 @@ exports.signup = async (req, res) => {
                 firstName: savedUser.firstname,
                 lastName: savedUser.lastname,
                 role: savedUser.role,
-                avatar: savedUser.avatar
+                avatar: savedUser.avatar,
+                status: savedUser.status
             },
         });
     } catch (err) {
@@ -75,8 +76,8 @@ exports.signin = async (req, res) => {
 
 exports.getCurrentUser = async (req, res) => {
     try {
-        const { email } = req.body;
-        const user = await User.findOne({ email: email });
+        const { id } = req.body;
+        const user = await User.findById(id);
         
         if (user) {
             return res.status(200).json({
@@ -128,6 +129,31 @@ exports.updateUser = async (req, res) => {
               avatar: updatedUser.avatar,
             },
         });
+
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+exports.deleteUser = async (req, res) => {
+    try {
+        const { id } =  req.body;
+
+        const deletedUser = await User.findByIdAndDelete(id);
+
+        if (deletedUser) {
+            return res.status(200).json({
+                success: true,
+                message: 'User successfully deleted.',
+                user: deletedUser
+            });
+        } else {
+            return res.status(404).json({
+                success: false,
+                message: 'User not found.'
+            });
+        }
 
     } catch (err) {
         console.log(err);
@@ -272,5 +298,27 @@ exports.resetPasswordAction = async (req, res) => {
         }
     } catch (err) {
         console.log(err);
+    }
+}
+
+exports.setStatus = async (req, res) => {
+    try {
+        const { id, status } = req.body;
+
+        const updatedUser = await User.findByIdAndUpdate(
+            id,
+            {
+                status: status
+            },
+        );
+
+        return res.status(200).json({
+            success: true,
+            user: updatedUser,
+        });
+
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({ message: "Internal server error" });
     }
 }

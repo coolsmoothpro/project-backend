@@ -33,5 +33,7 @@ router.post("/delete-project", ProjectController.deleteProject);
 router.post("/upload-project-file", upload.array('files', 10), ProjectController.uploadProjectFile);
 router.post("/delete-file", ProjectController.deleteFile);
 router.post("/delete-member", ProjectController.deleteMember);
+router.post("/delete-task", ProjectController.deleteTask);
+router.post("/edit-task", ProjectController.editTask);
 
 module.exports = router;

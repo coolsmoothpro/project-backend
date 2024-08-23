@@ -14,6 +14,7 @@ exports.createSuperAdmin = async (req, res) => {
                 email: "super@admin.com",
                 firstname: "Super",
                 lastname: "Admin",  
+                status: "Available",
                 password: newPassword,
                 role: "ADMIN",
             });
@@ -27,7 +28,7 @@ exports.createSuperAdmin = async (req, res) => {
 
 exports.createUser = async (req, res) => {
     try {
-        const { avatar, email, firstname, lastname, role, phone, organization, department, accountType, location, address1, address2, zipcode, password} = req.body;
+        const { avatar, email, firstname, lastname, role, phone, organization, department, accountType, status, location, address1, address2, zipcode, password} = req.body;
 
         const oldUser = await User.findOne({ email: email });
 
@@ -48,6 +49,7 @@ exports.createUser = async (req, res) => {
             organization: organization,
             department: department,
             accountType: accountType,
+            status: status,
             location: location,
             address1: address1,
             address2: address2,

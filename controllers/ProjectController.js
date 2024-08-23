@@ -259,29 +259,31 @@ exports.acceptInvite = async (req, res) => {
             const existingMember = project.members.find(member => member.email === email);
 
             if (existingMember) {
-                return res.status(400).json({
+                return res.status(201).json({
                     success: false,
                     message: "Member with this email already exists in the project.",
                 });
-            }
+            } else {
         
-            project.members.push({
-                email: email,
-                firstname: firstname,
-                lastname: lastname,
-                avatar: avatar,
-                role: role,
-                phone: phone
-            });
+                project.members.push({
+                    email: email,
+                    firstname: firstname,
+                    lastname: lastname,
+                    avatar: avatar,
+                    role: role,
+                    phone: phone
+                });
 
-            await project.save();
+                await project.save();
 
-            return res.status(200).json({
-                success: true,
-            });
+                return res.status(200).json({
+                    success: true,
+                    message: "You are a member of a new project."
+                });
+            }
         }
 
-        return res.status(400).json({ message: "The project is not existed!" });
+        return res.status(201).json({ message: "The project is not existed!" });
 
     } catch (err) {
         console.log(err);
@@ -301,7 +303,7 @@ exports.createTask = async (req, res) => {
                 taskDescription: taskDescription,
                 dueDate: dueDate,
                 status: status,
-                member: member
+                member: JSON.parse(member)
             });
 
             await project.save();
@@ -470,5 +472,76 @@ exports.deleteMember = async (req, res) => {
     } catch (err) {
         console.log(err);
         return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+exports.deleteTask = async (req, res) => {
+    try {
+        const { projectId, deleteTaskName } = req.body;
+
+        const project = await Project.findById(projectId);
+
+        project.tasks = project.tasks?.filter(task => task.taskName !== deleteTaskName);
+        
+        await project.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Task has been deleted!"
+        });
+    } catch (err) {
+        console.log(err);
+        return res.status(500).json({ message: "Internal server error" });
+    }
+}
+
+exports.editTask = async (req, res) => {
+    try {
+        const { projectId, taskName, taskDescription, dueDate, member } = req.body;
+
+        const project = await Project.findById(projectId);
+
+        if (project) {
+
+            const taskIndex = project.tasks.findIndex((task) => task.taskName === taskName);
+
+            if (taskIndex !== -1) {
+                project.tasks[taskIndex].taskName = taskName;
+                project.tasks[taskIndex].taskDescription = taskDescription;
+                project.tasks[taskIndex].dueDate = dueDate;
+                project.tasks[taskIndex].member = JSON.parse(member);
+                
+                project.markModified('tasks');
+        
+                try {
+                    await project.save();
+
+                    return res.status(200).json({
+                        success: true,
+                        message: "Task has been updated!"
+                    });
+                } catch (error) {
+                    return res.status(500).json({
+                        success: false,
+                        message: "Failed to save the project. Please try again.",
+                        error: error.message
+                    });
+                }
+            } else {
+                return res.status(404).json({
+                    success: false,
+                    message: "Task not found!"
+                });
+            }
+        }
+
+        return res.status(200).json({
+            success: false,
+            message: "The project is not found."
+        }); 
+
+    } catch (err) {
+        console.log(err);
+        return res.status(501).json({ message: "Internal server error" });
     }
 }
