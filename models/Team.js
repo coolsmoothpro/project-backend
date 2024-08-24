@@ -5,7 +5,6 @@ const Team = mongoose.model(
     new mongoose.Schema({
         teamName: String,
         teamDescription: String,
-        industry: String,
         members: Array,
     })
 );

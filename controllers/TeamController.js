@@ -3,16 +3,20 @@ const Team = db.team;
 
 exports.createTeam = async (req, res) => {
     try {
-        const { team_name, team_description, industry } = req.body
+        const { teamName, teamDescription, member } = req.body
+        const members = [];
+        members.push(JSON.parse(member));
+
         const newTeam = new Team({
-            team_name: team_name,
-            team_description: team_description,
-            industry: industry,
+            teamName: teamName,
+            teamDescription: teamDescription,
+            members: members,
         });
 
         await newTeam.save();
         return res.status(200).json({
             success: true,
+            message: "Team has been created!"
         }); 
 
     } catch (err) {
@@ -23,17 +27,37 @@ exports.createTeam = async (req, res) => {
 
 exports.teamList = async (req, res) => {
     try {
-        const teams = await Team.find().select({
-            avatar: 1,
-            team_name: 1,
-            team_description: 1,
-            industry: 1,
-            members: 1
-        });
+        const teams = await Team.find();
+
         return res.status(200).json({
             success: true,
-            users: teams,
+            teams: teams,
         });
+    } catch (err) {
+        console.log(err);
+        return res.status(501).json({ message: "Internal server error" });
+    }
+}
+
+exports.deleteTeam = async (req, res) => {
+    try {
+        const { teamId } = req.body;
+
+        const team = await Team.findById(teamId);
+
+        if (team) {
+            await Team.findByIdAndDelete(teamId);
+
+            return res.status(200).json({
+                success: true,
+                message: "Team has been deleted!"
+            });
+        } else {
+            return res.status(200).json({
+                success: false,
+                message: "Team not found!"
+            });
+        }        
     } catch (err) {
         console.log(err);
         return res.status(501).json({ message: "Internal server error" });
