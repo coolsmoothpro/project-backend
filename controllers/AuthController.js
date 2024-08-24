@@ -202,12 +202,14 @@ exports.updatePassword = async (req, res) => {
                     
                     return res.status(200).json({
                         success: false,
+                        message: "Faild!"
                     });
                 } else {
     
                     console.log(`Message sent: ${info.messageId}`);
                     return res.status(200).json({
                         success: true,
+                        message: "Your password has been changed! Check your email for confirmation!"
                     });
                 }
             });
