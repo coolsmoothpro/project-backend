@@ -1,15 +1,16 @@
 const db = require("../models");
 const Project = db.project;
 const { createTransport } = require('nodemailer');
-const sendGridMail = require("@sendgrid/mail");
 const User = require("../models/User");
+const nodemailer = require('nodemailer');
 
-sendGridMail.setApiKey(process.env.EMAIL_SEND_API_KEY);
-
-const transporter = createTransport({
-    host: "smtp.gmail.com",
+const transporter = nodemailer.createTransport({
+    host: process.env.SMTP_SERVER,
     port: process.env.SMTP_PORT,
     secure: true,
+    tls: {
+        rejectUnauthorized: false,
+    },
     auth: {
         user: process.env.SMTP_EMAIL,
         pass: process.env.SMTP_PASSWORD,
@@ -153,85 +154,57 @@ exports.sendInvite = async (req, res) => {
                     message: "Member with this email already exists in the project.",
                 });
             }
+
+            const encode = JSON.stringify(req.body);
+
+            const base64EncodedStr = btoa(encode);
+
+            const mailOptions = {
+                from: process.env.SMTP_EMAIL,
+                to: req.body.email,
+                subject: `You have received the invitation.`,
+                text: `Accept`,
+                html: `
+                    <p>
+                        Kindly click the button below to accept the invitation.
+                    </p>
+                    <a href="${process.env.CLIENT_URL}/welcome?token=${base64EncodedStr}" 
+                        style="
+                            text-decoration: none;
+                            color: #fff;
+                            background-color: #14A800;
+                            border-color: #14A800;
+                            min-width: 100px;
+                            border-radius: 3px;
+                            padding: 0.375rem 0.5rem;
+                            display: inline-block;
+                            text-align: center;
+                        ">
+                        Accept
+                    </a>
+                `
+            };
+            
+            transporter.sendMail(mailOptions, function(error, info){
+                if (error) {
+                    console.log(error);
+                    
+                    return res.status(200).json({
+                        success: false,
+                    });
+                } else {
+                    return res.status(200).json({
+                        success: true,
+                        message: "Invitation has been sent!"
+                    });
+                }
+            });
+        } else {
+            return res.status(201).json({
+                success: false,
+                message: "Project not found!"
+            });
         }
-
-        const encode = JSON.stringify(req.body);
-
-        const base64EncodedStr = btoa(encode);
-
-        await sendGridMail.send({
-            from: process.env.EMAIL_SENDER,
-            to: req.body.email,
-            subject: 'You have received the invitation.',
-            text: 'Accept',
-            html: `
-                <p>
-                    Kindly click the button below to accept the invitation.
-                </p>
-                <a href="${process.env.CLIENT_URL}/welcome?token=${base64EncodedStr}" 
-                    style="
-                        text-decoration: none;
-                        color: #fff;
-                        background-color: #14A800;
-                        border-color: #14A800;
-                        min-width: 100px;
-                        border-radius: 3px;
-                        padding: 0.375rem 0.5rem;
-                        display: inline-block;
-                        text-align: center;
-                    ">
-                    Accept
-                </a>
-            `
-        });
-
-        return res.status(200).json({
-            success: true,
-            message: "Invitation has been sent!"
-        });
-
-
-        // const mailOptions = {
-        //     from: process.env.SMTP_EMAIL,
-        //     to: req.body.email,
-        //     subject: `You have received the invitation.`,
-        //     text: `Accept`,
-        //     html: `
-        //         <p>
-        //             Kindly click the button below to accept the invitation.
-        //         </p>
-        //         <a href="${process.env.CLIENT_URL}/welcome?token=${base64EncodedStr}" 
-        //             style="
-        //                 text-decoration: none;
-        //                 color: #fff;
-        //                 background-color: #14A800;
-        //                 border-color: #14A800;
-        //                 min-width: 100px;
-        //                 border-radius: 3px;
-        //                 padding: 0.375rem 0.5rem;
-        //                 display: inline-block;
-        //                 text-align: center;
-        //             ">
-        //             Accept
-        //         </a>
-        //     `
-        // };
-        
-        // transporter.sendMail(mailOptions, function(error, info){
-        //     if (error) {
-        //         console.log(error);
-                
-        //         return res.status(200).json({
-        //             success: false,
-        //         });
-        //     } else {
-        //         return res.status(200).json({
-        //             success: true,
-        //         });
-        //     }
-        // });
-       
-        
 
     } catch (err) {
         console.log(err);

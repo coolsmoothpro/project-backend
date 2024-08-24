@@ -5,9 +5,7 @@ const Role = db.role;
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const sendGridMail = require("@sendgrid/mail");
-
-sendGridMail.setApiKey(process.env.EMAIL_SEND_API_KEY);
-
+const nodemailer = require('nodemailer');
 
 exports.signup = async (req, res) => {
     try {
@@ -163,7 +161,7 @@ exports.deleteUser = async (req, res) => {
 
 exports.updatePassword = async (req, res) => {
     try {
-        const { _id, newPassword } =  req.body;
+        const { server, port, _id, newPassword } =  req.body;
         const password = await bcrypt.hash(newPassword, 10);
         const updatedUser = await User.findByIdAndUpdate(
             _id,
@@ -172,9 +170,48 @@ exports.updatePassword = async (req, res) => {
             },
         );
 
-        return res.status(200).json({
-            success: true,
-        });
+        if (updatedUser) {
+            const transporter = nodemailer.createTransport({
+                host: server,
+                port: port,
+                secure: true,
+                tls: {
+                    rejectUnauthorized: false,
+                },
+                auth: {
+                    user: process.env.SMTP_EMAIL,
+                    pass: process.env.SMTP_PASSWORD,
+                },
+            });
+    
+            const mailOptions = {
+                from: '"Tasky" <tasky@i.exd-int.com>',
+                to: `coolsmooth.pro@gmail.com`,
+                subject: `Reset Password.`,
+                text: `Reset Password`,
+                html: `
+                    <p>
+                        Your password has been changed.
+                    </p>
+                `
+            };
+            
+            transporter.sendMail(mailOptions, function(error, info){
+                if (error) {
+                    console.log(error);
+                    
+                    return res.status(200).json({
+                        success: false,
+                    });
+                } else {
+    
+                    console.log(`Message sent: ${info.messageId}`);
+                    return res.status(200).json({
+                        success: true,
+                    });
+                }
+            });
+        }
 
     } catch (err) {
         console.log(err);
@@ -192,51 +229,24 @@ exports.forgetPassword = async (req, res) => {
 
         if (user) {
 
-            // const mailOptions = {
-            //     from: process.env.SMTP_EMAIL,
-            //     to: req.body.email,
-            //     subject: `Reset Password.`,
-            //     text: `Reset Password`,
-            //     html: `
-            //         <p>
-            //             Kindly click the button below to reset the password.
-            //         </p>
-            //         <a href="${process.env.CLIENT_URL}/reset-password-form?token=${base64EncodedStr}"
-            //             style="
-            //                 text-decoration: none;
-            //                 color: #fff;
-            //                 background-color: #14A800;
-            //                 border-color: #14A800;
-            //                 min-width: 100px;
-            //                 border-radius: 3px;
-            //                 padding: 0.375rem 0.5rem;
-            //                 display: inline-block;
-            //                 text-align: center;
-            //             ">
-            //             Reset
-            //         </a>
-            //     `
-            // };
-            
-            // transporter.sendMail(mailOptions, function(error, info){
-            //     if (error) {
-            //         console.log(error);
-                    
-            //         return res.status(200).json({
-            //             success: false,
-            //         });
-            //     } else {
-            //         return res.status(200).json({
-            //             success: true,
-            //         });
-            //     }
-            // });      
+            const transporter = nodemailer.createTransport({
+                host: process.env.SMTP_SERVER,
+                port: process.env.SMTP_PORT,
+                secure: true,
+                tls: {
+                    rejectUnauthorized: false,
+                },
+                auth: {
+                    user: process.env.SMTP_EMAIL,
+                    pass: process.env.SMTP_PASSWORD,
+                },
+            });
 
-            await sendGridMail.send({
-                from: process.env.EMAIL_SENDER,
-                to: email,
-                subject: 'Reset Password.',
-                text: 'Reset Password',
+            const mailOptions = {
+                from: process.env.SMTP_EMAIL,
+                to: req.body.email,
+                subject: `Reset Password.`,
+                text: `Reset Password`,
                 html: `
                     <p>
                         Kindly click the button below to reset the password.
@@ -256,11 +266,22 @@ exports.forgetPassword = async (req, res) => {
                         Reset
                     </a>
                 `
-            });
-
-            return res.status(200).json({
-                success: true,
-            });
+            };
+            
+            transporter.sendMail(mailOptions, function(error, info){
+                if (error) {
+                    console.log(error);
+                    
+                    return res.status(200).json({
+                        success: false,
+                    });
+                } else {
+                    
+                    return res.status(200).json({
+                        success: true,
+                    });
+                }
+            });      
 
         } else {
             return res.status(200).json({
