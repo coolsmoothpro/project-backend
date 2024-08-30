@@ -168,7 +168,7 @@ exports.sendInvite = async (req, res) => {
                     <p>
                         Kindly click the button below to accept the invitation.
                     </p>
-                    <a href="${process.env.CLIENT_URL}/welcome?token=${base64EncodedStr}" 
+                    <a href="http://${process.env.CLIENT_URL}/welcome?token=${base64EncodedStr}" 
                         style="
                             text-decoration: none;
                             color: #fff;

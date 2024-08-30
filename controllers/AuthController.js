@@ -4,7 +4,6 @@ const Role = db.role;
 
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const sendGridMail = require("@sendgrid/mail");
 const nodemailer = require('nodemailer');
 
 exports.signup = async (req, res) => {
@@ -253,7 +252,7 @@ exports.forgetPassword = async (req, res) => {
                     <p>
                         Kindly click the button below to reset the password.
                     </p>
-                    <a href="${process.env.CLIENT_URL}/reset-password-form?token=${base64EncodedStr}"
+                    <a href="http://${process.env.CLIENT_URL}/reset-password-form?token=${base64EncodedStr}"
                         style="
                             text-decoration: none;
                             color: #fff;
@@ -283,7 +282,7 @@ exports.forgetPassword = async (req, res) => {
                         success: true,
                     });
                 }
-            });      
+            });
 
         } else {
             return res.status(200).json({

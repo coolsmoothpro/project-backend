@@ -5,10 +5,15 @@ const path = require('path');
 
 const app=express();
 
+const cookieParser = require('cookie-parser');
+
+app.use(cookieParser());
+
 const AuthRoute = require("./routes/Auth");
 const UserRoute = require("./routes/User");
 const ProjectRoute = require("./routes/Project");
 const TeamRoute = require("./routes/Team");
+const ClientRoute = require("./routes/client");
 
 const PORT=process.env.PORT || 8475;
 
@@ -36,6 +41,7 @@ app.use("/api/v1/auth", AuthRoute);
 app.use("/api/v1/user", UserRoute);
 app.use("/api/v1/project", ProjectRoute);
 app.use("/api/v1/team", TeamRoute);
+app.use("/api/v1/client", ClientRoute);
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, 'build')));

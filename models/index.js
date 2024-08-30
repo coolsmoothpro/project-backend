@@ -10,5 +10,6 @@ db.role = require("./Role");
 db.team = require("./Team");
 db.project = require("./Project");
 db.task = require("./Task");
+db.client = require("./Client");
 
 module.exports = db;
