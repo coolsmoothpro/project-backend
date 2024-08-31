@@ -1,4 +1,5 @@
 const db = require("../models");
+const MultiConnection = require('../config/multitenantDB');
 const User = db.user;
 const Role = db.role;
 
@@ -73,8 +74,17 @@ exports.signin = async (req, res) => {
 
 exports.getCurrentUser = async (req, res) => {
     try {
-        const { id } = req.body;
-        const user = await User.findById(id);
+        const { clientId, id } = req.body;
+        let user;
+
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('User', User.schema);
+
+            user = await TenantModel.findById(id);
+        } else {
+            user = await User.findById(id);
+        }
         
         if (user) {
             return res.status(200).json({
@@ -96,25 +106,49 @@ exports.getCurrentUser = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
     try {
-        const { _id, avatar, email, firstname, lastname, phone, organization, department, accountType, location, address1, address2, zipcode} = req.body;
+        const { clientId, _id, avatar, email, firstname, lastname, phone, organization, department, accountType, location, address1, address2, zipcode} = req.body;
+        let updatedUser;
 
-        const updatedUser = await User.findByIdAndUpdate(
-            _id,
-            {
-                email: email,
-                firstname: firstname,
-                lastname: lastname,
-                avatar: avatar,
-                phone: phone,
-                organization: organization,
-                department: department,
-                accountType: accountType,
-                location: location,
-                address1: address1,
-                address2: address2,
-                zipcode: zipcode,
-            },
-        );
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('User', User.schema);
+
+            updatedUser = await TenantModel.findByIdAndUpdate(
+                _id,
+                {
+                    email: email,
+                    firstname: firstname,
+                    lastname: lastname,
+                    avatar: avatar,
+                    phone: phone,
+                    organization: organization,
+                    department: department,
+                    accountType: accountType,
+                    location: location,
+                    address1: address1,
+                    address2: address2,
+                    zipcode: zipcode,
+                },
+            );
+        } else {
+            updatedUser = await User.findByIdAndUpdate(
+                _id,
+                {
+                    email: email,
+                    firstname: firstname,
+                    lastname: lastname,
+                    avatar: avatar,
+                    phone: phone,
+                    organization: organization,
+                    department: department,
+                    accountType: accountType,
+                    location: location,
+                    address1: address1,
+                    address2: address2,
+                    zipcode: zipcode,
+                },
+            );
+        }        
 
         return res.status(200).json({
             success: true,
@@ -135,9 +169,18 @@ exports.updateUser = async (req, res) => {
 
 exports.deleteUser = async (req, res) => {
     try {
-        const { id } =  req.body;
+        const { clientId, id } =  req.body;
+        let deletedUser;
 
-        const deletedUser = await User.findByIdAndDelete(id);
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('User', User.schema);
+
+            deletedUser = await TenantModel.findByIdAndDelete(id);
+        } else {
+
+            deletedUser = await User.findByIdAndDelete(id);
+        }
 
         if (deletedUser) {
             return res.status(200).json({
@@ -160,14 +203,30 @@ exports.deleteUser = async (req, res) => {
 
 exports.updatePassword = async (req, res) => {
     try {
-        const { server, port, _id, newPassword } =  req.body;
+        const { clientId, server, port, _id, newPassword } =  req.body;
+
         const password = await bcrypt.hash(newPassword, 10);
-        const updatedUser = await User.findByIdAndUpdate(
-            _id,
-            {
-                password: password
-            },
-        );
+        let updatedUser;
+
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('User', User.schema);
+
+            updatedUser = await TenantModel.findByIdAndUpdate(
+                _id,
+                {
+                    password: password
+                },
+            );
+
+        } else {
+            updatedUser = await User.findByIdAndUpdate(
+                _id,
+                {
+                    password: password
+                },
+            );
+        }
 
         if (updatedUser) {
             const transporter = nodemailer.createTransport({
@@ -185,7 +244,7 @@ exports.updatePassword = async (req, res) => {
     
             const mailOptions = {
                 from: '"Tasky" <tasky@i.exd-int.com>',
-                to: `coolsmooth.pro@gmail.com`,
+                to: updatedUser.email,
                 subject: `Reset Password.`,
                 text: `Reset Password`,
                 html: `
@@ -222,11 +281,20 @@ exports.updatePassword = async (req, res) => {
 
 exports.forgetPassword = async (req, res) => {
     try {
-        const { email } = req.body;
+        const { clientId, email } = req.body;
         const encode = JSON.stringify(req.body);
         const base64EncodedStr = btoa(encode);
 
-        const user = await User.findOne({ email: email });
+        let user;
+
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('User', User.schema);
+
+            user = await TenantModel.findOne({ email: email });
+        } else {
+            user = await User.findOne({ email: email });
+        }        
 
         if (user) {
 
@@ -243,6 +311,11 @@ exports.forgetPassword = async (req, res) => {
                 },
             });
 
+            let url;
+            clientId ? 
+                url = `http://${clientId}.${process.env.CLIENT_URL}/reset-password-form?token=${base64EncodedStr}` 
+                : url = `http://${process.env.CLIENT_URL}/reset-password-form?token=${base64EncodedStr}`;
+
             const mailOptions = {
                 from: process.env.SMTP_EMAIL,
                 to: req.body.email,
@@ -252,7 +325,7 @@ exports.forgetPassword = async (req, res) => {
                     <p>
                         Kindly click the button below to reset the password.
                     </p>
-                    <a href="http://${process.env.CLIENT_URL}/reset-password-form?token=${base64EncodedStr}"
+                    <a href="${url}"
                         style="
                             text-decoration: none;
                             color: #fff;
@@ -299,10 +372,22 @@ exports.forgetPassword = async (req, res) => {
 
 exports.resetPasswordAction = async (req, res) => {
     try {        
-        const { email, password } = req.body;
-        const user = await User.findOne({
-            email: email,
-        });
+        const { clientId, email, password } = req.body;
+        let user;
+
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('User', User.schema);
+
+            user = await TenantModel.findOne({
+                email: email,
+            });
+
+        } else {
+            user = await User.findOne({
+                email: email,
+            });
+        }        
     
         if (user) {
             const newPassword = await bcrypt.hash(password, 10);
@@ -325,14 +410,27 @@ exports.resetPasswordAction = async (req, res) => {
 
 exports.setStatus = async (req, res) => {
     try {
-        const { id, status } = req.body;
+        const { clientId, id, status } = req.body;
+        let updatedUser;
 
-        const updatedUser = await User.findByIdAndUpdate(
-            id,
-            {
-                status: status
-            },
-        );
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('User', User.schema);
+
+            updatedUser = await TenantModel.findByIdAndUpdate(
+                id,
+                {
+                    status: status
+                },
+            );
+        } else {
+            updatedUser = await User.findByIdAndUpdate(
+                id,
+                {
+                    status: status
+                },
+            );
+        }        
 
         return res.status(200).json({
             success: true,
