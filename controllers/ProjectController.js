@@ -1,6 +1,6 @@
+const MultiConnection = require('../config/multitenantDB');
 const db = require("../models");
 const Project = db.project;
-const { createTransport } = require('nodemailer');
 const User = require("../models/User");
 const nodemailer = require('nodemailer');
 
@@ -19,29 +19,57 @@ const transporter = nodemailer.createTransport({
 
 exports.createProject = async (req, res) => {
     try {
-        const { client, projectLogo, projectName, projectDescription, dueDate, terms, expectedValue, milestone, members, status, tasks } = req.body;
+        const { clientId, client, projectLogo, projectName, projectDescription, dueDate, terms, expectedValue, milestone, members, status, tasks } = req.body;
+
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
+
+            const tenantProject = new TenantModel({
+                clientId: clientId,
+                client: client,
+                projectLogo: projectLogo,
+                projectName: projectName,
+                projectDescription: projectDescription,
+                dueDate: dueDate,
+                attachedFiles: req.files,
+                terms: terms,
+                expectedValue: expectedValue,
+                milestone: milestone,
+                members: members,
+                status: status,
+                tasks: tasks
+            });
+    
+            await tenantProject.save();
+
+            return res.status(200).json({
+                success: true,
+            }); 
+        } else {
+            const newProject = new Project({
+                clientId: clientId,
+                client: client,
+                projectLogo: projectLogo,
+                projectName: projectName,
+                projectDescription: projectDescription,
+                dueDate: dueDate,
+                attachedFiles: req.files,
+                terms: terms,
+                expectedValue: expectedValue,
+                milestone: milestone,
+                members: members,
+                status: status,
+                tasks: tasks
+            });
+    
+            await newProject.save();
+    
+            return res.status(200).json({
+                success: true,
+            }); 
+        }       
         
-
-        const newProject = new Project({
-            client: client,
-            projectLogo: projectLogo,
-            projectName: projectName,
-            projectDescription: projectDescription,
-            dueDate: dueDate,
-            attachedFiles: req.files,
-            terms: terms,
-            expectedValue: expectedValue,
-            milestone: milestone,
-            members: members,
-            status: status,
-            tasks: tasks
-        });
-
-        await newProject.save();
-
-        return res.status(200).json({
-            success: true,
-        }); 
 
     } catch (err) {
         console.log(err);
@@ -51,18 +79,27 @@ exports.createProject = async (req, res) => {
 
 exports.projectList = async (req, res) => {
     try {
-        const projects = await Project.find();
+        const { clientId } = req.body;
+        let projects;
 
-        if (projects) {
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
+            projects = await TenantModel.find();
+
             return res.status(200).json({
                 success: true,
                 projects: projects,
             });
         } else {
+            projects = await Project.find();
+
             return res.status(200).json({
-                success: false,
+                success: true,
+                projects: projects,
             });
         }
+        
     } catch (err) {
         console.log(err);
         return res.status(501).json({ message: "Internal server error" });
@@ -71,13 +108,28 @@ exports.projectList = async (req, res) => {
 
 exports.getProject = async (req, res) => {
     try {
-        const { id } = req.body;
-        const project = await Project.findById(id);
+        const { clientId, id } = req.body;
+        let project;
 
-        return res.status(200).json({
-            success: true,
-            project: project
-        });
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
+            project = await TenantModel.findById(id);
+
+            return res.status(200).json({
+                success: true,
+                project: project
+            });
+
+        } else {
+            project = await Project.findById(id);
+
+            return res.status(200).json({
+                success: true,
+                project: project
+            });
+        }
+        
 
     } catch (err) {
         console.log(err);
@@ -87,16 +139,28 @@ exports.getProject = async (req, res) => {
 
 exports.updateProjectStatus = async (req, res) => {
     try {
-        const id = req.body.taskId;
-        const status = req.body.newStatus;
+        const { clientId, id, status } = req.body;
+        let updatedProject;
 
-        const updatedProject = await Project.findByIdAndUpdate(
-            id,
-            {
-                status: status
-            }
-        );
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
 
+            updatedProject = await TenantModel.findByIdAndUpdate(
+                id,
+                {
+                    status: status
+                }
+            );  
+        } else {
+            updatedProject = await Project.findByIdAndUpdate(
+                id,
+                {
+                    status: status
+                }
+            );    
+        }
+        
         return res.status(200).json({
             success: true,
             project: {
@@ -112,9 +176,14 @@ exports.updateProjectStatus = async (req, res) => {
 
 exports.updateProject = async (req, res) => {
     try {
-        const { id, projectLogo, projectName, projectDescription, terms, expectedValue, milestone } = req.body;
+        const { clientId, id, projectLogo, projectName, projectDescription, terms, expectedValue, milestone } = req.body;
+        let updatedProject;
 
-        const updatedProject = await Project.findByIdAndUpdate(
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
+
+            updatedProject = await TenantModel.findByIdAndUpdate(
                 id,
                 {
                     projectLogo: projectLogo,
@@ -124,7 +193,21 @@ exports.updateProject = async (req, res) => {
                     expectedValue: expectedValue,
                     milestone: milestone
                 }
-        );
+            );
+
+        } else {
+            updatedProject = await Project.findByIdAndUpdate(
+                id,
+                {
+                    projectLogo: projectLogo,
+                    projectName: projectName,
+                    projectDescription: projectDescription,
+                    terms: terms,
+                    expectedValue: expectedValue,
+                    milestone: milestone
+                }
+            );
+        }
 
         return res.status(200).json({
             success: true,
@@ -141,8 +224,17 @@ exports.updateProject = async (req, res) => {
 
 exports.sendInvite = async (req, res) => {
     try {
-        const { email, projectName } = req.body;
-        const project = await Project.findOne({ projectName: projectName });
+        const { clientId, email, projectName } = req.body;
+        let project;
+
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
+            project = await TenantModel.findOne({ projectName: projectName });
+
+        } else {
+            project = await Project.findOne({ projectName: projectName });
+        }
 
         if(project) {
 
@@ -159,6 +251,11 @@ exports.sendInvite = async (req, res) => {
 
             const base64EncodedStr = btoa(encode);
 
+            let url;
+            clientId ? 
+                url = `http://${clientId}.${process.env.CLIENT_URL}/welcome?token=${base64EncodedStr}` 
+                : url = `http://${process.env.CLIENT_URL}/welcome?token=${base64EncodedStr}`;
+
             const mailOptions = {
                 from: process.env.SMTP_EMAIL,
                 to: req.body.email,
@@ -168,7 +265,7 @@ exports.sendInvite = async (req, res) => {
                     <p>
                         Kindly click the button below to accept the invitation.
                     </p>
-                    <a href="http://${process.env.CLIENT_URL}/welcome?token=${base64EncodedStr}" 
+                    <a href="${url}" 
                         style="
                             text-decoration: none;
                             color: #fff;
@@ -214,18 +311,37 @@ exports.sendInvite = async (req, res) => {
 
 exports.acceptInvite = async (req, res) => {
     try {
-        const { token } = req.body;
+        const { clientId, token } = req.body;
         const decoded = JSON.parse(atob(token));
         const projectName = decoded?.projectName;
         const email = decoded?.email;
-        const user = await User.findOne({email: email});
-        const firstname = user?.firstname;
-        const lastname = user?.lastname;
-        const avatar = user?.avatar;
-        const role = user?.role;
-        const phone = user?.phone;
 
-        const project = await Project.findOne({ projectName: projectName });
+        let user, firstname, lastname, avatar, role, phone, project;
+
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+
+            const TenantUserModel = tenantDB.model('User', User.schema);
+            user = await TenantUserModel.findOne({email: email});
+            firstname = user?.firstname;
+            lastname = user?.lastname;
+            avatar = user?.avatar;
+            role = user?.role;
+            phone = user?.phone;
+
+            const TenantProjectModel = tenantDB.model('Project', Project.schema);
+            project = await TenantProjectModel.findOne({ projectName: projectName });
+
+        } else {
+            user = await User.findOne({email: email});
+            firstname = user?.firstname;
+            lastname = user?.lastname;
+            avatar = user?.avatar;
+            role = user?.role;
+            phone = user?.phone;
+
+            project = await Project.findOne({ projectName: projectName });
+        }
 
         if(project) {
 
@@ -266,9 +382,18 @@ exports.acceptInvite = async (req, res) => {
 
 exports.createTask = async (req, res) => {
     try {
-        const { projectId, taskName, taskDescription, dueDate, status, member } = req.body;
+        const { clientId, projectId, taskName, taskDescription, dueDate, status, member } = req.body;
+        let project;
 
-        const project = await Project.findById(projectId);
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
+
+            project = await TenantModel.findById(projectId);
+
+        } else {
+            project = await Project.findById(projectId);            
+        }
 
         if (project) {
             project.tasks.push({
@@ -290,7 +415,7 @@ exports.createTask = async (req, res) => {
         return res.status(200).json({
             success: false,
             message: "The project is not found."
-        }); 
+        });   
 
     } catch (err) {
         console.log(err);
@@ -300,17 +425,33 @@ exports.createTask = async (req, res) => {
 
 exports.taskList = async (req, res) => {
     try {
-        const { projectId } = req.body;
+        const { clientId, projectId } = req.body;
+        let project;
 
-        const project = await Project.findById(projectId);
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
+            project = await TenantModel.findById(projectId);
 
-        if (project) {           
+            if (project) {
+    
+                return res.status(200).json({
+                    success: true,
+                    tasks: project.tasks
+                }); 
+            }
 
-            return res.status(200).json({
-                success: true,
-                tasks: project.tasks
-            }); 
-        }
+        } else {
+            project = await Project.findById(projectId);
+
+            if (project) {
+    
+                return res.status(200).json({
+                    success: true,
+                    tasks: project.tasks
+                }); 
+            }
+        }        
 
         return res.status(200).json({
             success: false,
@@ -325,9 +466,17 @@ exports.taskList = async (req, res) => {
 
 exports.updateTaskStatus = async (req, res) => {
     try {
-        const { projectId, taskName, newStatus } = req.body;
+        const { clientId, projectId, taskName, newStatus } = req.body;
+        let project;
 
-        const project = await Project.findById(projectId);
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
+
+            project = await TenantModel.findById(projectId);
+        } else {
+            project = await Project.findById(projectId);
+        }
 
         if (project) {
             const taskIndex = project.tasks.findIndex((task) => task.taskName === taskName);
@@ -364,23 +513,46 @@ exports.updateTaskStatus = async (req, res) => {
 
 exports.deleteProject = async (req, res) => {
     try {
-        const { projectId } = req.body;
+        const { clientId, projectId } = req.body;
+        let project;
 
-        const project = await Project.findById(projectId);
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
+            project = await TenantModel.findById(projectId);
 
-        if (project) {
-            await Project.findByIdAndDelete(projectId);
-
-            return res.status(200).json({
-                success: true,
-                message: "Project has been deleted!"
-            });
+            if (project) {
+                await TenantModel.findByIdAndDelete(projectId);
+    
+                return res.status(200).json({
+                    success: true,
+                    message: "Project has been deleted!"
+                });
+            } else {
+                return res.status(200).json({
+                    success: false,
+                    message: "Project not found!"
+                });
+            }    
         } else {
-            return res.status(200).json({
-                success: false,
-                message: "Project not found!"
-            });
-        }        
+            project = await Project.findById(projectId);
+
+            if (project) {
+                await Project.findByIdAndDelete(projectId);
+    
+                return res.status(200).json({
+                    success: true,
+                    message: "Project has been deleted!"
+                });
+            } else {
+                return res.status(200).json({
+                    success: false,
+                    message: "Project not found!"
+                });
+            }       
+        }
+
+         
 
     } catch (err) {
         console.log(err);
@@ -390,9 +562,18 @@ exports.deleteProject = async (req, res) => {
 
 exports.uploadProjectFile = async (req, res) => {
     try {
-        const { projectId } = req.body;
+        const { clientId, projectId } = req.body;
+        let project;
 
-        const project = await Project.findById(projectId);
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
+
+            project = await TenantModel.findById(projectId);
+
+        } else {
+            project = await Project.findById(projectId);
+        }
 
         req.files?.forEach((file) => {
             project.attachedFiles.push(file);
@@ -411,9 +592,18 @@ exports.uploadProjectFile = async (req, res) => {
 
 exports.deleteFile = async (req, res) => {
     try {
-        const { projectId, filename } = req.body;
+        const { clientId, projectId, filename } = req.body;
+        let project;
 
-        const project = await Project.findById(projectId);
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
+
+            project = await TenantModel.findById(projectId);
+
+        } else {
+            project = await Project.findById(projectId);
+        }
 
         project.attachedFiles = project.attachedFiles?.filter(file => file.filename !== filename);
         
@@ -430,9 +620,18 @@ exports.deleteFile = async (req, res) => {
 
 exports.deleteMember = async (req, res) => {
     try {
-        const { projectId, email } = req.body;
+        const { clientId, projectId, email } = req.body;
+        let project;
 
-        const project = await Project.findById(projectId);
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
+
+            project = await TenantModel.findById(projectId);
+
+        } else {
+            project = await Project.findById(projectId);
+        }
 
         project.members = project.members?.filter(member => member.email !== email);
         
@@ -450,10 +649,19 @@ exports.deleteMember = async (req, res) => {
 
 exports.deleteTask = async (req, res) => {
     try {
-        const { projectId, deleteTaskName } = req.body;
+        const { clientId, projectId, deleteTaskName } = req.body;
+        let project;
 
-        const project = await Project.findById(projectId);
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
 
+            project = await TenantModel.findById(projectId);
+
+        } else {
+            project = await Project.findById(projectId);
+        }
+        
         project.tasks = project.tasks?.filter(task => task.taskName !== deleteTaskName);
         
         await project.save();
@@ -470,9 +678,18 @@ exports.deleteTask = async (req, res) => {
 
 exports.editTask = async (req, res) => {
     try {
-        const { projectId, taskName, taskDescription, dueDate, member } = req.body;
+        const { clientId, projectId, taskName, taskDescription, dueDate, member } = req.body;
+        let project;
 
-        const project = await Project.findById(projectId);
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Project', Project.schema);
+
+            project = await TenantModel.findById(projectId);
+
+        } else {
+            project = await Project.findById(projectId);
+        }
 
         if (project) {
 

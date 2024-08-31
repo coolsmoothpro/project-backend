@@ -6,6 +6,7 @@ const Project = mongoose.model(
         projectLogo: String,
         projectName: String,
         projectDescription: String,
+        clientId: String,
         client: String,
         dueDate: String,
         attachedFiles: Array,

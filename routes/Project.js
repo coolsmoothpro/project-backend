@@ -20,7 +20,7 @@ const upload = multer({
 });
 
 router.post("/create", upload.array('files', 10), ProjectController.createProject);
-router.get("/list", ProjectController.projectList);
+router.post("/list", ProjectController.projectList);
 router.post("/getById", ProjectController.getProject);
 router.post("/update-project-status", ProjectController.updateProjectStatus);
 router.post("/update-project", ProjectController.updateProject);

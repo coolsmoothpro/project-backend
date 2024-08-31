@@ -1,23 +1,44 @@
 const db = require("../models");
+const MultiConnection = require('../config/multitenantDB');
 const Team = db.team;
 
 exports.createTeam = async (req, res) => {
     try {
-        const { teamName, teamDescription, member } = req.body
+        const { clientId, teamName, teamDescription, member } = req.body;
+
         const members = [];
         members.push(JSON.parse(member));
 
-        const newTeam = new Team({
-            teamName: teamName,
-            teamDescription: teamDescription,
-            members: members,
-        });
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Team', Team.schema);
 
-        await newTeam.save();
-        return res.status(200).json({
-            success: true,
-            message: "Team has been created!"
-        }); 
+            const tenantTeam = new TenantModel({
+                clientId: clientId,
+                teamName: teamName,
+                teamDescription: teamDescription,
+                members: members,
+            });
+    
+            await tenantTeam.save();
+
+            return res.status(200).json({
+                success: true,
+            }); 
+        } else {
+            const newTeam = new Team({
+                clientId: clientId,
+                teamName: teamName,
+                teamDescription: teamDescription,
+                members: members,
+            });
+
+            await newTeam.save();
+            return res.status(200).json({
+                success: true,
+                message: "Team has been created!"
+            }); 
+        }
 
     } catch (err) {
         console.log(err);
@@ -27,7 +48,17 @@ exports.createTeam = async (req, res) => {
 
 exports.teamList = async (req, res) => {
     try {
-        const teams = await Team.find();
+        const { clientId } = req.body;
+        let teams;
+
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Team', Team.schema);
+
+            teams = await TenantModel.find();
+        } else {
+            teams = await Team.find();
+        }
 
         return res.status(200).json({
             success: true,
@@ -41,23 +72,45 @@ exports.teamList = async (req, res) => {
 
 exports.deleteTeam = async (req, res) => {
     try {
-        const { teamId } = req.body;
+        const { clientId, teamId } = req.body;
+        let team;
 
-        const team = await Team.findById(teamId);
+        if (clientId) {
+            const tenantDB = await MultiConnection(clientId);
+            const TenantModel = tenantDB.model('Team', Team.schema);
 
-        if (team) {
-            await Team.findByIdAndDelete(teamId);
+            team = await TenantModel.findById(teamId);
 
-            return res.status(200).json({
-                success: true,
-                message: "Team has been deleted!"
-            });
+            if (team) {
+                await TenantModel.findByIdAndDelete(teamId);
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Team has been deleted!"
+                });
+            } else {
+                return res.status(200).json({
+                    success: false,
+                    message: "Team not found!"
+                });
+            }
         } else {
-            return res.status(200).json({
-                success: false,
-                message: "Team not found!"
-            });
-        }        
+            team = await Team.findById(teamId);
+
+            if (team) {
+                await Team.findByIdAndDelete(teamId);
+
+                return res.status(200).json({
+                    success: true,
+                    message: "Team has been deleted!"
+                });
+            } else {
+                return res.status(200).json({
+                    success: false,
+                    message: "Team not found!"
+                });
+            }
+        }
     } catch (err) {
         console.log(err);
         return res.status(501).json({ message: "Internal server error" });
