@@ -1,5 +1,6 @@
 const db = require("../models");
 const User = db.user;
+const Client = db.client;
 var bcrypt = require("bcryptjs");
 const MultiConnection = require('../config/multitenantDB');
 
@@ -33,7 +34,7 @@ exports.createUser = async (req, res) => {
 
         if (clientId) {
             const tenantDB = await MultiConnection(clientId);
-            const TenantModel = tenantDB.model('User', User.schema);
+            const TenantModel = tenantDB.model('Client', Client.schema);
 
             const oldUser1 = await TenantModel.findOne({ email: email });
 
@@ -125,7 +126,7 @@ exports.getUserList = async (req, res) => {
 
         if (clientId) {
             const tenantDB = await MultiConnection(clientId);
-            const TenantClientModel = tenantDB.model('User', User.schema);
+            const TenantClientModel = tenantDB.model('Client', Client.schema);
             users = await TenantClientModel.find();
 
             return res.status(200).json({

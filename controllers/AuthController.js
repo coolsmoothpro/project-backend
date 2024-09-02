@@ -2,6 +2,7 @@ const db = require("../models");
 const MultiConnection = require('../config/multitenantDB');
 const User = db.user;
 const Role = db.role;
+const Client = db.client;
 
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
@@ -79,7 +80,7 @@ exports.getCurrentUser = async (req, res) => {
 
         if (clientId) {
             const tenantDB = await MultiConnection(clientId);
-            const TenantModel = tenantDB.model('User', User.schema);
+            const TenantModel = tenantDB.model('Client', Client.schema);
 
             user = await TenantModel.findById(id);
         } else {
@@ -111,7 +112,7 @@ exports.updateUser = async (req, res) => {
 
         if (clientId) {
             const tenantDB = await MultiConnection(clientId);
-            const TenantModel = tenantDB.model('User', User.schema);
+            const TenantModel = tenantDB.model('Client', Client.schema);
 
             updatedUser = await TenantModel.findByIdAndUpdate(
                 _id,
@@ -174,7 +175,7 @@ exports.deleteUser = async (req, res) => {
 
         if (clientId) {
             const tenantDB = await MultiConnection(clientId);
-            const TenantModel = tenantDB.model('User', User.schema);
+            const TenantModel = tenantDB.model('Client', Client.schema);
 
             deletedUser = await TenantModel.findByIdAndDelete(id);
         } else {
@@ -210,7 +211,7 @@ exports.updatePassword = async (req, res) => {
 
         if (clientId) {
             const tenantDB = await MultiConnection(clientId);
-            const TenantModel = tenantDB.model('User', User.schema);
+            const TenantModel = tenantDB.model('Client', Client.schema);
 
             updatedUser = await TenantModel.findByIdAndUpdate(
                 _id,
@@ -289,7 +290,7 @@ exports.forgetPassword = async (req, res) => {
 
         if (clientId) {
             const tenantDB = await MultiConnection(clientId);
-            const TenantModel = tenantDB.model('User', User.schema);
+            const TenantModel = tenantDB.model('Client', Client.schema);
 
             user = await TenantModel.findOne({ email: email });
         } else {
@@ -377,7 +378,7 @@ exports.resetPasswordAction = async (req, res) => {
 
         if (clientId) {
             const tenantDB = await MultiConnection(clientId);
-            const TenantModel = tenantDB.model('User', User.schema);
+            const TenantModel = tenantDB.model('Client', Client.schema);
 
             user = await TenantModel.findOne({
                 email: email,
@@ -415,7 +416,7 @@ exports.setStatus = async (req, res) => {
 
         if (clientId) {
             const tenantDB = await MultiConnection(clientId);
-            const TenantModel = tenantDB.model('User', User.schema);
+            const TenantModel = tenantDB.model('Client', Client.schema);
 
             updatedUser = await TenantModel.findByIdAndUpdate(
                 id,

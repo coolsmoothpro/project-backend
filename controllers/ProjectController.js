@@ -1,6 +1,7 @@
 const MultiConnection = require('../config/multitenantDB');
 const db = require("../models");
 const Project = db.project;
+const Client = db.client;
 const User = require("../models/User");
 const nodemailer = require('nodemailer');
 
@@ -321,7 +322,7 @@ exports.acceptInvite = async (req, res) => {
         if (clientId) {
             const tenantDB = await MultiConnection(clientId);
 
-            const TenantUserModel = tenantDB.model('User', User.schema);
+            const TenantUserModel = tenantDB.model('Client', Client.schema);
             user = await TenantUserModel.findOne({email: email});
             firstname = user?.firstname;
             lastname = user?.lastname;
