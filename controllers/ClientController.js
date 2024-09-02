@@ -38,9 +38,9 @@ exports.createClient = async (req, res) => {
         // Create a new client in the tenant's database
         
         for (const admin of admins) {
-            const client = await TenantClientModel.findOne({ email: admin.email });
+            // const client = await TenantClientModel.findOne({ email: admin.email });
 
-            if (client) continue;
+            // if (client) continue;
 
             const tenantClient = new TenantClientModel({
                 clientId: clientId, 
