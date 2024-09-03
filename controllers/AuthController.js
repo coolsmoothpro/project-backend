@@ -65,7 +65,7 @@ exports.signin = async (req, res) => {
                 return res.status(401).json({ message: "Invalid password" });
             }
         } else {
-            return res.status(404).json({ message: "Email not found" });
+            return res.status(200).json({ message: "Email not found" });
         }
     } catch (err) {
         console.log(err);
