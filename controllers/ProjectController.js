@@ -140,7 +140,7 @@ exports.getProject = async (req, res) => {
 
 exports.updateProjectStatus = async (req, res) => {
     try {
-        const { clientId, id, status } = req.body;
+        const { clientId, taskId, newStatus } = req.body;
         let updatedProject;
 
         if (clientId) {
@@ -148,17 +148,19 @@ exports.updateProjectStatus = async (req, res) => {
             const TenantModel = tenantDB.model('Project', Project.schema);
 
             updatedProject = await TenantModel.findByIdAndUpdate(
-                id,
+                taskId,
                 {
-                    status: status
-                }
+                    status: newStatus
+                },
+                { new: true }
             );  
         } else {
             updatedProject = await Project.findByIdAndUpdate(
-                id,
+                taskId,
                 {
-                    status: status
-                }
+                    status: newStatus
+                },
+                { new: true }
             );    
         }
         
