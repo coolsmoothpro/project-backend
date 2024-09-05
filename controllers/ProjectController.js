@@ -20,7 +20,7 @@ const transporter = nodemailer.createTransport({
 
 exports.createProject = async (req, res) => {
     try {
-        const { clientId, client, projectLogo, projectName, projectDescription, dueDate, terms, expectedValue, milestone, members, status, tasks } = req.body;
+        const { clientId, client, projectLogo, projectName, projectDescription, startDate, dueDate, terms, expectedValue, milestone, members, status, tasks } = req.body;
 
         if (clientId) {
             const tenantDB = await MultiConnection(clientId);
@@ -32,6 +32,7 @@ exports.createProject = async (req, res) => {
                 projectLogo: projectLogo,
                 projectName: projectName,
                 projectDescription: projectDescription,
+                startDate: startDate,
                 dueDate: dueDate,
                 attachedFiles: req.files,
                 terms: terms,
@@ -54,6 +55,7 @@ exports.createProject = async (req, res) => {
                 projectLogo: projectLogo,
                 projectName: projectName,
                 projectDescription: projectDescription,
+                startDate: startDate,
                 dueDate: dueDate,
                 attachedFiles: req.files,
                 terms: terms,
@@ -179,7 +181,7 @@ exports.updateProjectStatus = async (req, res) => {
 
 exports.updateProject = async (req, res) => {
     try {
-        const { clientId, id, projectLogo, projectName, projectDescription, terms, expectedValue, milestone } = req.body;
+        const { clientId, id, projectLogo, projectName, projectDescription, startDate, dueDate, terms, expectedValue, milestone, tasks } = req.body;
         let updatedProject;
 
         if (clientId) {
@@ -192,9 +194,12 @@ exports.updateProject = async (req, res) => {
                     projectLogo: projectLogo,
                     projectName: projectName,
                     projectDescription: projectDescription,
+                    startDate: startDate,
+                    dueDate: dueDate,
                     terms: terms,
                     expectedValue: expectedValue,
-                    milestone: milestone
+                    milestone: milestone,
+                    tasks: tasks
                 }
             );
 
@@ -205,9 +210,12 @@ exports.updateProject = async (req, res) => {
                     projectLogo: projectLogo,
                     projectName: projectName,
                     projectDescription: projectDescription,
+                    startDate: startDate,
+                    dueDate: dueDate,
                     terms: terms,
                     expectedValue: expectedValue,
-                    milestone: milestone
+                    milestone: milestone,
+                    tasks: tasks
                 }
             );
         }
@@ -385,7 +393,7 @@ exports.acceptInvite = async (req, res) => {
 
 exports.createTask = async (req, res) => {
     try {
-        const { clientId, projectId, taskName, taskDescription, dueDate, status, member } = req.body;
+        const { clientId, projectId, taskName, taskDescription, startDate, dueDate, status, member } = req.body;
         let project;
 
         if (clientId) {
@@ -403,6 +411,7 @@ exports.createTask = async (req, res) => {
                 taskName: taskName,
                 taskDescription: taskDescription,
                 dueDate: dueDate,
+                startDate: startDate,
                 status: status,
                 member: JSON.parse(member)
             });
@@ -681,7 +690,7 @@ exports.deleteTask = async (req, res) => {
 
 exports.editTask = async (req, res) => {
     try {
-        const { clientId, projectId, taskName, taskDescription, dueDate, member } = req.body;
+        const { clientId, projectId, taskName, taskDescription, startDate, dueDate, member } = req.body;
         let project;
 
         if (clientId) {
@@ -701,6 +710,7 @@ exports.editTask = async (req, res) => {
             if (taskIndex !== -1) {
                 project.tasks[taskIndex].taskName = taskName;
                 project.tasks[taskIndex].taskDescription = taskDescription;
+                project.tasks[taskIndex].startDate = startDate;
                 project.tasks[taskIndex].dueDate = dueDate;
                 project.tasks[taskIndex].member = JSON.parse(member);
                 

@@ -8,6 +8,7 @@ const Project = mongoose.model(
         projectDescription: String,
         clientId: String,
         client: String,
+        startDate: String,
         dueDate: String,
         attachedFiles: Array,
         terms: String,
